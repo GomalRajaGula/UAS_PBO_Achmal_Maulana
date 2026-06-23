@@ -6,18 +6,18 @@ require_once 'Karyawan.php';
 /**
  * Class KaryawanTetap
  * 
- * Sesuai prinsip OOP PHP, karena class ini belum mengimplementasikan 
- * abstract method dari parent class (hitungTotalHarga dan tampilkanInfoFasilitas),
- * maka class ini dideklarasikan sebagai abstract class.
+ * Class turunan dari Karyawan untuk tipe tetap.
+ * Class ini tidak lagi bersifat abstract karena sudah mengimplementasikan 
+ * seluruh method abstrak dari parent.
  */
-abstract class KaryawanTetap extends Karyawan {
+class KaryawanTetap extends Karyawan {
     
-    // 1. Property tambahan dengan modifier protected
+    // Property tambahan dengan modifier protected
     protected float $tunjangan_kesehatan;
     protected string $opsi_saham_id;
 
     /**
-     * 2. Constructor menerima data array dari database
+     * Constructor menerima data array dari database
      * 
      * @param array $data Data row dari database (associative array)
      */
@@ -25,7 +25,7 @@ abstract class KaryawanTetap extends Karyawan {
         // Memanggil parent constructor (Karyawan)
         parent::__construct($data);
 
-        // 3. Mapping data spesifik untuk KaryawanTetap
+        // Mapping data spesifik untuk KaryawanTetap
         // Casting ke float untuk tunjangan_kesehatan agar aman, dan fallback jika null
         $this->tunjangan_kesehatan = isset($data['tunjangan_kesehatan']) ? (float) $data['tunjangan_kesehatan'] : 0.0;
         
@@ -34,7 +34,7 @@ abstract class KaryawanTetap extends Karyawan {
     }
 
     /**
-     * 4. Getter untuk property tunjangan_kesehatan
+     * Getter untuk property tunjangan_kesehatan
      * 
      * @return float
      */
@@ -43,7 +43,7 @@ abstract class KaryawanTetap extends Karyawan {
     }
 
     /**
-     * 4. Getter untuk property opsi_saham_id
+     * Getter untuk property opsi_saham_id
      * 
      * @return string
      */
@@ -51,5 +51,16 @@ abstract class KaryawanTetap extends Karyawan {
         return $this->opsi_saham_id;
     }
 
-    // 5. Abstract method sengaja tidak diimplementasikan dulu sesuai spesifikasi.
+    /**
+     * Implementasi method overriding untuk menghitung gaji bersih Karyawan Tetap
+     * 
+     * Rumus: (hari_kerja_masuk * gaji_dasar_per_hari) + tunjangan_kesehatan
+     * Mengakses property protected milik parent dan private milik class ini sendiri.
+     * 
+     * @return float
+     */
+    public function hitungGajiBersih(): float {
+        // Menghitung total gaji dan menambahkan tunjangan kesehatan, lalu memastikannya bertipe float
+        return (float) (($this->hari_kerja_masuk * $this->gaji_dasar_per_hari) + $this->tunjangan_kesehatan);
+    }
 }
