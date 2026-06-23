@@ -1,25 +1,44 @@
 <?php
 require_once 'config/database.php';
-require_once 'classes/Karyawan.php';
+
+// 1. Memuat seluruh class turunan. Kita DILARANG melakukan instansiasi class Karyawan secara langsung.
+require_once 'classes/KaryawanKontrak.php';
+require_once 'classes/KaryawanTetap.php';
+require_once 'classes/KaryawanMagang.php';
 
 $database = new Database();
 $db = $database->connect();
 
-$karyawanList = [];
+// Array penampung list object Karyawan
+$daftarKaryawan = [];
 $connectionStatus = false;
 $errorMessage = "";
 
 if ($db) {
     $connectionStatus = true;
-    $karyawan = new Karyawan($db);
     try {
-        $stmt = $karyawan->read();
-        $karyawanList = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // 3. Mengambil data dari tabel_karyawan menggunakan PDO murni
+        $query = "SELECT * FROM tabel_karyawan ORDER BY id_karyawan ASC";
+        $stmt = $db->prepare($query);
+        $stmt->execute();
+        
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // 4 & 5. Looping data array, cek jenis karyawan, lalu buat object yang spesifik
+        foreach ($results as $row) {
+            if ($row['jenis_karyawan'] === 'Kontrak') {
+                $daftarKaryawan[] = new KaryawanKontrak($row);
+            } elseif ($row['jenis_karyawan'] === 'Tetap') {
+                $daftarKaryawan[] = new KaryawanTetap($row);
+            } elseif ($row['jenis_karyawan'] === 'Magang') {
+                $daftarKaryawan[] = new KaryawanMagang($row);
+            }
+        }
     } catch (Exception $e) {
-        $errorMessage = "Tabel karyawan tidak ditemukan atau query bermasalah. Pastikan Anda telah mengimpor file SQL ke database Anda. Detail: " . $e->getMessage();
+        $errorMessage = "Terjadi kesalahan pada query atau tabel_karyawan belum diimport dengan benar. Detail: " . $e->getMessage();
     }
 } else {
-    $errorMessage = "Koneksi database gagal. Silakan periksa kembali konfigurasi koneksi database Anda.";
+    $errorMessage = "Koneksi database gagal. Silakan periksa kembali konfigurasi database Anda.";
 }
 ?>
 <!DOCTYPE html>
@@ -263,9 +282,9 @@ if ($db) {
             background-color: rgba(59, 130, 246, 0.15);
             color: #93c5fd;
             border: 1px solid rgba(59, 130, 246, 0.3);
-            padding: 0.25rem 0.6rem;
-            border-radius: 6px;
-            font-size: 0.8rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
             font-weight: 500;
             display: inline-block;
         }
@@ -346,7 +365,7 @@ if ($db) {
             </ul>
 
             <div class="info-alert">
-                Aplikasi ini mendemonstrasikan pemrograman berorientasi objek menggunakan PHP, PDO, dan arsitektur database relasional.
+                Aplikasi ini merepresentasikan penggunaan nyata fitur <b>Inheritance</b> dan <b>Polymorphism</b> pada Object-Oriented Programming (PHP).
             </div>
         </section>
 
@@ -354,7 +373,7 @@ if ($db) {
         <section class="card" style="overflow: hidden;">
             <h2 class="card-title">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-primary);"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                Daftar Karyawan
+                Daftar & Rekap Gaji Karyawan
             </h2>
 
             <?php if (!empty($errorMessage)): ?>
@@ -365,25 +384,30 @@ if ($db) {
             <?php endif; ?>
 
             <div class="table-container">
-                <?php if ($connectionStatus && !empty($karyawanList)): ?>
+                <?php if ($connectionStatus && !empty($daftarKaryawan)): ?>
                     <table>
                         <thead>
                             <tr>
-                                <th>NIP</th>
-                                <th>Nama Lengkap</th>
-                                <th>Jabatan</th>
-                                <th>Email</th>
-                                <th>No. Telepon</th>
+                                <th>Nama Karyawan</th>
+                                <th>Departemen</th>
+                                <th>Jenis Karyawan</th>
+                                <th>Gaji Bersih</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($karyawanList as $row): ?>
+                            <!-- 6. Looping menggunakan object-object yang telah diinisiasi pada array $daftarKaryawan -->
+                            <?php foreach ($daftarKaryawan as $karyawan): ?>
                                 <tr>
-                                    <td style="font-family: monospace; font-weight: 500; color: #a78bfa;"><?php echo htmlspecialchars($row['nip']); ?></td>
-                                    <td style="font-weight: 600;"><?php echo htmlspecialchars($row['nama']); ?></td>
-                                    <td><span class="badge-jabatan"><?php echo htmlspecialchars($row['jabatan']); ?></span></td>
-                                    <td><?php echo htmlspecialchars($row['email']); ?></td>
-                                    <td><?php echo htmlspecialchars($row['no_telp']); ?></td>
+                                    <td style="font-weight: 600; color: #f3f4f6;"><?php echo htmlspecialchars($karyawan->getNamaKaryawan()); ?></td>
+                                    <td><?php echo htmlspecialchars($karyawan->getDepartemen()); ?></td>
+                                    <td>
+                                        <!-- Menampilkan nama class object (KaryawanKontrak, KaryawanTetap, KaryawanMagang) -->
+                                        <span class="badge-jabatan"><?php echo htmlspecialchars(get_class($karyawan)); ?></span>
+                                    </td>
+                                    <td style="font-family: monospace; font-size: 1.05rem; font-weight: 500; color: #10b981;">
+                                        <!-- Memanggil hitungGajiBersih() yang akan dieksekusi secara polymorphic -->
+                                        Rp <?php echo number_format($karyawan->hitungGajiBersih(), 0, ',', '.'); ?>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
