@@ -21,28 +21,25 @@ $searchKeyword = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 if ($db) {
     try {
-        // Query dinamis berdasarkan pencarian
-        if (!empty($searchKeyword)) {
-            $query = "SELECT * FROM tabel_karyawan WHERE nama_karyawan LIKE :keyword ORDER BY id_karyawan ASC";
-            $stmt = $db->prepare($query);
-            $stmt->bindValue(':keyword', '%' . $searchKeyword . '%', PDO::PARAM_STR);
-        } else {
-            $query = "SELECT * FROM tabel_karyawan ORDER BY id_karyawan ASC";
-            $stmt = $db->prepare($query);
-        }
-        
-        $stmt->execute();
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Instantiate class untuk query (hanya passing db)
+        $kontrak = new KaryawanKontrak($db);
+        $tetap = new KaryawanTetap($db);
+        $magang = new KaryawanMagang($db);
+
+        // Eksekusi method search dari tiap object
+        $resultsKontrak = $kontrak->search($searchKeyword);
+        $resultsTetap = $tetap->search($searchKeyword);
+        $resultsMagang = $magang->search($searchKeyword);
         
         // Looping data array, mapping object ke subclass (Polymorphism)
-        foreach ($results as $row) {
-            if ($row['jenis_karyawan'] === 'Kontrak') {
-                $listKontrak[] = new KaryawanKontrak($row);
-            } elseif ($row['jenis_karyawan'] === 'Tetap') {
-                $listTetap[] = new KaryawanTetap($row);
-            } elseif ($row['jenis_karyawan'] === 'Magang') {
-                $listMagang[] = new KaryawanMagang($row);
-            }
+        foreach ($resultsKontrak as $row) {
+            $listKontrak[] = new KaryawanKontrak($db, $row);
+        }
+        foreach ($resultsTetap as $row) {
+            $listTetap[] = new KaryawanTetap($db, $row);
+        }
+        foreach ($resultsMagang as $row) {
+            $listMagang[] = new KaryawanMagang($db, $row);
         }
     } catch (Exception $e) {
         $errorMessage = "Terjadi kesalahan pada query. Detail: " . $e->getMessage();

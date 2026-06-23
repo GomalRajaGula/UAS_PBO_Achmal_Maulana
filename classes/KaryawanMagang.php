@@ -19,18 +19,45 @@ class KaryawanMagang extends Karyawan {
     /**
      * Constructor menerima data array dari database
      * 
+     * @param PDO $db Objek koneksi database
      * @param array $data Data record dari database (associative array)
      */
-    public function __construct(array $data) {
+    public function __construct(PDO $db, array $data = []) {
         // Memanggil parent constructor (Karyawan)
-        parent::__construct($data);
+        parent::__construct($db, $data);
 
-        // Mapping data spesifik untuk KaryawanMagang
-        // Melakukan casting ke (float) untuk uang_saku_bulanan, serta memberikan nilai fallback 0.0
-        $this->uang_saku_bulanan = isset($data['uang_saku_bulanan']) ? (float) $data['uang_saku_bulanan'] : 0.0;
+        if (!empty($data)) {
+            // Mapping data spesifik untuk KaryawanMagang
+            // Melakukan casting ke (float) untuk uang_saku_bulanan, serta memberikan nilai fallback 0.0
+            $this->uang_saku_bulanan = isset($data['uang_saku_bulanan']) ? (float) $data['uang_saku_bulanan'] : 0.0;
+            
+            // Menggunakan null coalescing operator untuk string
+            $this->sertifikat_kampus_merdeka = $data['sertifikat_kampus_merdeka'] ?? 'Tidak ada';
+        }
+    }
+
+    /**
+     * Method pencarian data Karyawan Magang
+     * 
+     * @param string $keyword
+     * @return array
+     */
+    public function search(string $keyword = ''): array {
+        $query = "SELECT * FROM tabel_karyawan WHERE jenis_karyawan = 'Magang'";
         
-        // Menggunakan null coalescing operator untuk string
-        $this->sertifikat_kampus_merdeka = $data['sertifikat_kampus_merdeka'] ?? 'Tidak ada';
+        if (!empty($keyword)) {
+            $query .= " AND nama_karyawan LIKE :keyword";
+        }
+        $query .= " ORDER BY id_karyawan ASC";
+        
+        $stmt = $this->db->prepare($query);
+        
+        if (!empty($keyword)) {
+            $stmt->bindValue(':keyword', '%' . $keyword . '%', PDO::PARAM_STR);
+        }
+        
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**

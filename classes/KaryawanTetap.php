@@ -19,18 +19,45 @@ class KaryawanTetap extends Karyawan {
     /**
      * Constructor menerima data array dari database
      * 
+     * @param PDO $db Objek koneksi database
      * @param array $data Data row dari database (associative array)
      */
-    public function __construct(array $data) {
+    public function __construct(PDO $db, array $data = []) {
         // Memanggil parent constructor (Karyawan)
-        parent::__construct($data);
+        parent::__construct($db, $data);
 
-        // Mapping data spesifik untuk KaryawanTetap
-        // Casting ke float untuk tunjangan_kesehatan agar aman, dan fallback jika null
-        $this->tunjangan_kesehatan = isset($data['tunjangan_kesehatan']) ? (float) $data['tunjangan_kesehatan'] : 0.0;
+        if (!empty($data)) {
+            // Mapping data spesifik untuk KaryawanTetap
+            // Casting ke float untuk tunjangan_kesehatan agar aman, dan fallback jika null
+            $this->tunjangan_kesehatan = isset($data['tunjangan_kesehatan']) ? (float) $data['tunjangan_kesehatan'] : 0.0;
+            
+            // Menggunakan null coalescing untuk string
+            $this->opsi_saham_id = $data['opsi_saham_id'] ?? 'Tidak ada';
+        }
+    }
+
+    /**
+     * Method pencarian data Karyawan Tetap
+     * 
+     * @param string $keyword
+     * @return array
+     */
+    public function search(string $keyword = ''): array {
+        $query = "SELECT * FROM tabel_karyawan WHERE jenis_karyawan = 'Tetap'";
         
-        // Menggunakan null coalescing untuk string
-        $this->opsi_saham_id = $data['opsi_saham_id'] ?? 'Tidak ada';
+        if (!empty($keyword)) {
+            $query .= " AND nama_karyawan LIKE :keyword";
+        }
+        $query .= " ORDER BY id_karyawan ASC";
+        
+        $stmt = $this->db->prepare($query);
+        
+        if (!empty($keyword)) {
+            $stmt->bindValue(':keyword', '%' . $keyword . '%', PDO::PARAM_STR);
+        }
+        
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
