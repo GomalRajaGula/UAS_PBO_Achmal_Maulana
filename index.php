@@ -1,7 +1,7 @@
 <?php
 require_once 'config/database.php';
 
-// 1. Memuat seluruh class turunan. Kita DILARANG melakukan instansiasi class Karyawan secara langsung.
+// 2. Memuat seluruh class turunan. Pastikan TIDAK menginstansiasi abstract class Karyawan.
 require_once 'classes/KaryawanKontrak.php';
 require_once 'classes/KaryawanTetap.php';
 require_once 'classes/KaryawanMagang.php';
@@ -9,7 +9,7 @@ require_once 'classes/KaryawanMagang.php';
 $database = new Database();
 $db = $database->connect();
 
-// Array penampung list object Karyawan
+// 4. Array penampung semua object
 $daftarKaryawan = [];
 $connectionStatus = false;
 $errorMessage = "";
@@ -17,14 +17,14 @@ $errorMessage = "";
 if ($db) {
     $connectionStatus = true;
     try {
-        // 3. Mengambil data dari tabel_karyawan menggunakan PDO murni
+        // 1. Mengambil semua data dari tabel_karyawan menggunakan PDO murni
         $query = "SELECT * FROM tabel_karyawan ORDER BY id_karyawan ASC";
         $stmt = $db->prepare($query);
         $stmt->execute();
         
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // 4 & 5. Looping data array, cek jenis karyawan, lalu buat object yang spesifik
+        // 3. Looping data array, mapping object sesuai jenis_karyawan
         foreach ($results as $row) {
             if ($row['jenis_karyawan'] === 'Kontrak') {
                 $daftarKaryawan[] = new KaryawanKontrak($row);
@@ -35,10 +35,10 @@ if ($db) {
             }
         }
     } catch (Exception $e) {
-        $errorMessage = "Terjadi kesalahan pada query atau tabel_karyawan belum diimport dengan benar. Detail: " . $e->getMessage();
+        $errorMessage = "Terjadi kesalahan pada query. Detail: " . $e->getMessage();
     }
 } else {
-    $errorMessage = "Koneksi database gagal. Silakan periksa kembali konfigurasi database Anda.";
+    $errorMessage = "Koneksi database gagal.";
 }
 ?>
 <!DOCTYPE html>
@@ -46,7 +46,7 @@ if ($db) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UAS PBO - SIPERUKA (Achmal Maulana)</title>
+    <title>UAS PBO (Achmal Maulana)</title>
     
     <!-- Meta Tags SEO -->
     <meta name="description" content="Dashboard Sistem Informasi Karyawan - UAS PBO TRPL 1B Achmal Maulana">
@@ -63,7 +63,6 @@ if ($db) {
             --card-bg: rgba(17, 24, 39, 0.7);
             --card-border: rgba(255, 255, 255, 0.08);
             --accent-primary: #3b82f6;
-            --accent-glow: rgba(59, 130, 246, 0.5);
             --text-main: #f3f4f6;
             --text-secondary: #9ca3af;
             --success-color: #10b981;
@@ -88,7 +87,6 @@ if ($db) {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
             padding: 2rem 1.5rem;
         }
 
@@ -124,7 +122,7 @@ if ($db) {
 
         @media (min-width: 992px) {
             main {
-                grid-template-columns: 320px 1fr;
+                grid-template-columns: 280px 1fr;
             }
         }
 
@@ -136,32 +134,21 @@ if ($db) {
             border-radius: 16px;
             padding: 2rem;
             box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-            transition: all 0.3s ease;
-        }
-
-        .card:hover {
-            border-color: rgba(59, 130, 246, 0.3);
-            box-shadow: 0 15px 35px -5px rgba(59, 130, 246, 0.1);
         }
 
         .card-title {
             font-size: 1.25rem;
             font-weight: 600;
             margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
             border-bottom: 1px solid var(--card-border);
             padding-bottom: 0.75rem;
+            color: #fff;
         }
 
-        /* Status Badge Component */
         .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
+            display: inline-block;
             font-weight: 500;
-            font-size: 0.875rem;
+            font-size: 0.85rem;
             padding: 0.35rem 0.85rem;
             border-radius: 50px;
             margin-top: 0.5rem;
@@ -179,49 +166,20 @@ if ($db) {
             border: 1px solid rgba(239, 68, 68, 0.3);
         }
 
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-
-        .connected .status-dot {
-            background-color: var(--success-color);
-            box-shadow: 0 0 8px var(--success-color);
-            animation: pulse 2s infinite;
-        }
-
-        .disconnected .status-dot {
-            background-color: var(--danger-color);
-            box-shadow: 0 0 8px var(--danger-color);
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-        }
-
         .meta-list {
             list-style: none;
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: 1.25rem;
             margin-top: 1rem;
-        }
-
-        .meta-item {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
         }
 
         .meta-label {
             font-size: 0.75rem;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
             color: var(--text-secondary);
+            display: block;
+            margin-bottom: 0.25rem;
         }
 
         .meta-value {
@@ -229,19 +187,7 @@ if ($db) {
             font-weight: 500;
         }
 
-        /* Database Info Alert */
-        .info-alert {
-            background: rgba(59, 130, 246, 0.08);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            border-radius: 8px;
-            padding: 1rem;
-            font-size: 0.875rem;
-            line-height: 1.5;
-            color: #93c5fd;
-            margin-top: 1rem;
-        }
-
-        /* Table Styling */
+        /* 7. CSS Inline Sederhana untuk Tabel (Border, Padding, Hover) */
         .table-container {
             overflow-x: auto;
             width: 100%;
@@ -251,31 +197,33 @@ if ($db) {
             width: 100%;
             border-collapse: collapse;
             text-align: left;
+            margin-top: 0.5rem;
         }
 
         th {
-            padding: 1rem;
+            padding: 1.2rem 1rem;
             font-weight: 600;
             color: var(--text-secondary);
-            border-bottom: 1px solid var(--card-border);
+            border-bottom: 2px solid var(--card-border);
             font-size: 0.875rem;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
         }
 
         td {
             padding: 1.25rem 1rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             font-size: 0.95rem;
             color: var(--text-main);
+            transition: background-color 0.2s ease;
         }
 
         tr:last-child td {
             border-bottom: none;
         }
 
+        /* Hover Effect */
         tr:hover td {
-            background-color: rgba(255, 255, 255, 0.02);
+            background-color: rgba(255, 255, 255, 0.04);
         }
 
         .badge-jabatan {
@@ -289,30 +237,6 @@ if ($db) {
             display: inline-block;
         }
 
-        /* Empty / Error state */
-        .empty-state {
-            text-align: center;
-            padding: 3rem 1rem;
-            color: var(--text-secondary);
-        }
-
-        .error-message {
-            color: var(--danger-color);
-            background: rgba(239, 68, 68, 0.08);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .error-title {
-            font-weight: 600;
-        }
-
         footer {
             margin-top: auto;
             padding-top: 3rem;
@@ -324,70 +248,53 @@ if ($db) {
 </head>
 <body>
     <header>
-        <h1 class="header-title">SIPERUKA</h1>
+        <h1 class="header-title">UAS PBO</h1>
         <p class="header-subtitle">Sistem Informasi Karyawan - UAS Pemrograman Berorientasi Objek</p>
     </header>
 
     <main>
         <!-- Sidebar Meta Info -->
         <section class="card">
-            <h2 class="card-title">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-primary);"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                Status Sistem
-            </h2>
+            <h2 class="card-title">Status Sistem</h2>
             
-            <div class="meta-item">
+            <div>
                 <span class="meta-label">Koneksi Database</span>
                 <?php if ($connectionStatus): ?>
-                    <span class="status-badge connected">
-                        <span class="status-dot"></span> Terhubung
-                    </span>
+                    <span class="status-badge connected">Terhubung</span>
                 <?php else: ?>
-                    <span class="status-badge disconnected">
-                        <span class="status-dot"></span> Terputus
-                    </span>
+                    <span class="status-badge disconnected">Terputus</span>
                 <?php endif; ?>
             </div>
 
             <ul class="meta-list">
-                <li class="meta-item">
+                <li>
                     <span class="meta-label">Nama Database</span>
                     <span class="meta-value" style="font-family: monospace;">DB_UAS_PBO_TRPL1B_Achmal_Maulana</span>
                 </li>
-                <li class="meta-item">
-                    <span class="meta-label">Nama Mahasiswa</span>
-                    <span class="meta-value">Achmal Maulana</span>
-                </li>
-                <li class="meta-item">
-                    <span class="meta-label">Kelas</span>
-                    <span class="meta-value">TRPL 1B</span>
+                <li>
+                    <span class="meta-label">Mahasiswa</span>
+                    <span class="meta-value">Achmal Maulana (TRPL 1B)</span>
                 </li>
             </ul>
-
-            <div class="info-alert">
-                Aplikasi ini merepresentasikan penggunaan nyata fitur <b>Inheritance</b> dan <b>Polymorphism</b> pada Object-Oriented Programming (PHP).
-            </div>
         </section>
 
         <!-- Main Content (Karyawan List) -->
         <section class="card" style="overflow: hidden;">
-            <h2 class="card-title">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-primary);"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                Daftar & Rekap Gaji Karyawan
-            </h2>
+            <h2 class="card-title">Daftar Karyawan</h2>
 
             <?php if (!empty($errorMessage)): ?>
-                <div class="error-message">
-                    <div class="error-title">Kesalahan Sistem:</div>
-                    <div><?php echo htmlspecialchars($errorMessage); ?></div>
+                <div style="color: #ef4444; padding: 1rem; border: 1px solid #ef4444; background: rgba(239, 68, 68, 0.08); border-radius: 8px; margin-bottom: 1rem;">
+                    <?php echo htmlspecialchars($errorMessage); ?>
                 </div>
             <?php endif; ?>
 
             <div class="table-container">
                 <?php if ($connectionStatus && !empty($daftarKaryawan)): ?>
+                    <!-- 5. TAMPILKAN DI HTML dengan kolom yang diminta -->
                     <table>
                         <thead>
                             <tr>
+                                <th>ID</th>
                                 <th>Nama Karyawan</th>
                                 <th>Departemen</th>
                                 <th>Jenis Karyawan</th>
@@ -395,17 +302,28 @@ if ($db) {
                             </tr>
                         </thead>
                         <tbody>
-                            <!-- 6. Looping menggunakan object-object yang telah diinisiasi pada array $daftarKaryawan -->
+                            <!-- 6. Gunakan foreach untuk render data -->
                             <?php foreach ($daftarKaryawan as $karyawan): ?>
                                 <tr>
-                                    <td style="font-weight: 600; color: #f3f4f6;"><?php echo htmlspecialchars($karyawan->getNamaKaryawan()); ?></td>
-                                    <td><?php echo htmlspecialchars($karyawan->getDepartemen()); ?></td>
+                                    <!-- Menampilkan ID (Baru ditambahkan) -->
+                                    <td style="color: #9ca3af; font-weight: 500;">
+                                        #<?php echo htmlspecialchars($karyawan->getIdKaryawan()); ?>
+                                    </td>
+                                    
+                                    <td style="font-weight: 600; color: #f3f4f6;">
+                                        <?php echo htmlspecialchars($karyawan->getNamaKaryawan()); ?>
+                                    </td>
+                                    
                                     <td>
-                                        <!-- Menampilkan nama class object (KaryawanKontrak, KaryawanTetap, KaryawanMagang) -->
+                                        <?php echo htmlspecialchars($karyawan->getDepartemen()); ?>
+                                    </td>
+                                    
+                                    <td>
                                         <span class="badge-jabatan"><?php echo htmlspecialchars(get_class($karyawan)); ?></span>
                                     </td>
+                                    
                                     <td style="font-family: monospace; font-size: 1.05rem; font-weight: 500; color: #10b981;">
-                                        <!-- Memanggil hitungGajiBersih() yang akan dieksekusi secara polymorphic -->
+                                        <!-- Pemanggilan hitungGajiBersih() (Polymorphism) -->
                                         Rp <?php echo number_format($karyawan->hitungGajiBersih(), 0, ',', '.'); ?>
                                     </td>
                                 </tr>
@@ -413,11 +331,7 @@ if ($db) {
                         </tbody>
                     </table>
                 <?php else: ?>
-                    <div class="empty-state">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-secondary); margin-bottom: 1rem;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                        <p>Tidak ada data karyawan yang dapat ditampilkan.</p>
-                        <p style="font-size: 0.85rem; margin-top: 0.5rem;">Pastikan database sudah didefinisikan dan tabel karyawan sudah terisi data.</p>
-                    </div>
+                    <p style="text-align: center; color: #9ca3af; padding: 2rem;">Tidak ada data karyawan.</p>
                 <?php endif; ?>
             </div>
         </section>
