@@ -1,7 +1,7 @@
 <?php
 require_once 'config/database.php';
 
-// 2. Memuat seluruh class turunan. Pastikan TIDAK menginstansiasi abstract class Karyawan.
+// Memuat seluruh class turunan.
 require_once 'classes/KaryawanKontrak.php';
 require_once 'classes/KaryawanTetap.php';
 require_once 'classes/KaryawanMagang.php';
@@ -9,7 +9,6 @@ require_once 'classes/KaryawanMagang.php';
 $database = new Database();
 $db = $database->connect();
 
-// 4. Array penampung semua object
 $daftarKaryawan = [];
 $connectionStatus = false;
 $errorMessage = "";
@@ -17,14 +16,14 @@ $errorMessage = "";
 if ($db) {
     $connectionStatus = true;
     try {
-        // 1. Mengambil semua data dari tabel_karyawan menggunakan PDO murni
+        // Mengambil semua data dari tabel_karyawan menggunakan PDO
         $query = "SELECT * FROM tabel_karyawan ORDER BY id_karyawan ASC";
         $stmt = $db->prepare($query);
         $stmt->execute();
         
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // 3. Looping data array, mapping object sesuai jenis_karyawan
+        // Looping data array, mapping object sesuai jenis_karyawan (Polymorphism)
         foreach ($results as $row) {
             if ($row['jenis_karyawan'] === 'Kontrak') {
                 $daftarKaryawan[] = new KaryawanKontrak($row);
@@ -46,7 +45,7 @@ if ($db) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UAS PBO (Achmal Maulana)</title>
+    <title>Sistem Manajemen Karyawan - UAS PBO</title>
     
     <!-- Meta Tags SEO -->
     <meta name="description" content="Dashboard Sistem Informasi Karyawan - UAS PBO TRPL 1B Achmal Maulana">
@@ -62,7 +61,6 @@ if ($db) {
             --bg-color: #0b0f19;
             --card-bg: rgba(17, 24, 39, 0.7);
             --card-border: rgba(255, 255, 255, 0.08);
-            --accent-primary: #3b82f6;
             --text-main: #f3f4f6;
             --text-secondary: #9ca3af;
             --success-color: #10b981;
@@ -187,7 +185,7 @@ if ($db) {
             font-weight: 500;
         }
 
-        /* 7. CSS Inline Sederhana untuk Tabel (Border, Padding, Hover) */
+        /* CSS Tabel */
         .table-container {
             overflow-x: auto;
             width: 100%;
@@ -221,20 +219,35 @@ if ($db) {
             border-bottom: none;
         }
 
-        /* Hover Effect */
         tr:hover td {
             background-color: rgba(255, 255, 255, 0.04);
         }
 
+        /* Badge Warna Karyawan Spesifik */
         .badge-jabatan {
-            background-color: rgba(59, 130, 246, 0.15);
-            color: #93c5fd;
-            border: 1px solid rgba(59, 130, 246, 0.3);
             padding: 0.35rem 0.75rem;
             border-radius: 8px;
             font-size: 0.85rem;
-            font-weight: 500;
+            font-weight: 600;
             display: inline-block;
+        }
+
+        .badge-kontrak {
+            background-color: rgba(59, 130, 246, 0.15);
+            color: #93c5fd; /* Biru */
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .badge-tetap {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: #6ee7b7; /* Hijau */
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-magang {
+            background-color: rgba(249, 115, 22, 0.15);
+            color: #fdba74; /* Oranye */
+            border: 1px solid rgba(249, 115, 22, 0.3);
         }
 
         footer {
@@ -248,8 +261,8 @@ if ($db) {
 </head>
 <body>
     <header>
-        <h1 class="header-title">UAS PBO</h1>
-        <p class="header-subtitle">Sistem Informasi Karyawan - UAS Pemrograman Berorientasi Objek</p>
+        <h1 class="header-title">Sistem Manajemen Karyawan</h1>
+        <p class="header-subtitle">UAS Pemrograman Berorientasi Objek - Achmal Maulana</p>
     </header>
 
     <main>
@@ -290,7 +303,6 @@ if ($db) {
 
             <div class="table-container">
                 <?php if ($connectionStatus && !empty($daftarKaryawan)): ?>
-                    <!-- 5. TAMPILKAN DI HTML dengan kolom yang diminta -->
                     <table>
                         <thead>
                             <tr>
@@ -302,10 +314,21 @@ if ($db) {
                             </tr>
                         </thead>
                         <tbody>
-                            <!-- 6. Gunakan foreach untuk render data -->
-                            <?php foreach ($daftarKaryawan as $karyawan): ?>
+                            <?php foreach ($daftarKaryawan as $karyawan): 
+                                // Menentukan class object dan warna badge
+                                $className = get_class($karyawan);
+                                $badgeClass = 'badge-kontrak'; // default
+                                $jenisText = 'Kontrak';
+
+                                if ($className === 'KaryawanTetap') {
+                                    $badgeClass = 'badge-tetap';
+                                    $jenisText = 'Tetap';
+                                } elseif ($className === 'KaryawanMagang') {
+                                    $badgeClass = 'badge-magang';
+                                    $jenisText = 'Magang';
+                                }
+                            ?>
                                 <tr>
-                                    <!-- Menampilkan ID (Baru ditambahkan) -->
                                     <td style="color: #9ca3af; font-weight: 500;">
                                         #<?php echo htmlspecialchars($karyawan->getIdKaryawan()); ?>
                                     </td>
@@ -319,11 +342,12 @@ if ($db) {
                                     </td>
                                     
                                     <td>
-                                        <span class="badge-jabatan"><?php echo htmlspecialchars(get_class($karyawan)); ?></span>
+                                        <span class="badge-jabatan <?php echo $badgeClass; ?>">
+                                            <?php echo htmlspecialchars($jenisText); ?>
+                                        </span>
                                     </td>
                                     
                                     <td style="font-family: monospace; font-size: 1.05rem; font-weight: 500; color: #10b981;">
-                                        <!-- Pemanggilan hitungGajiBersih() (Polymorphism) -->
                                         Rp <?php echo number_format($karyawan->hitungGajiBersih(), 0, ',', '.'); ?>
                                     </td>
                                 </tr>
