@@ -6,18 +6,18 @@ require_once 'Karyawan.php';
 /**
  * Class KaryawanMagang
  * 
- * Sesuai prinsip OOP PHP, karena class ini belum mengimplementasikan 
- * abstract method dari parent class (hitungTotalHarga dan tampilkanInfoFasilitas),
- * maka class ini dideklarasikan sebagai abstract class.
+ * Class turunan dari Karyawan untuk tipe magang.
+ * Class ini tidak lagi bersifat abstract karena sudah mengimplementasikan 
+ * seluruh method abstrak dari parent.
  */
-abstract class KaryawanMagang extends Karyawan {
+class KaryawanMagang extends Karyawan {
     
-    // 1. Property tambahan dengan modifier protected
+    // Property tambahan dengan modifier protected
     protected float $uang_saku_bulanan;
     protected string $sertifikat_kampus_merdeka;
 
     /**
-     * 2. Constructor menerima data array dari database
+     * Constructor menerima data array dari database
      * 
      * @param array $data Data record dari database (associative array)
      */
@@ -25,7 +25,7 @@ abstract class KaryawanMagang extends Karyawan {
         // Memanggil parent constructor (Karyawan)
         parent::__construct($data);
 
-        // 3. Mapping data spesifik untuk KaryawanMagang
+        // Mapping data spesifik untuk KaryawanMagang
         // Melakukan casting ke (float) untuk uang_saku_bulanan, serta memberikan nilai fallback 0.0
         $this->uang_saku_bulanan = isset($data['uang_saku_bulanan']) ? (float) $data['uang_saku_bulanan'] : 0.0;
         
@@ -34,7 +34,7 @@ abstract class KaryawanMagang extends Karyawan {
     }
 
     /**
-     * 4. Getter untuk property uang_saku_bulanan
+     * Getter untuk property uang_saku_bulanan
      * 
      * @return float
      */
@@ -43,7 +43,7 @@ abstract class KaryawanMagang extends Karyawan {
     }
 
     /**
-     * 4. Getter untuk property sertifikat_kampus_merdeka
+     * Getter untuk property sertifikat_kampus_merdeka
      * 
      * @return string
      */
@@ -51,6 +51,16 @@ abstract class KaryawanMagang extends Karyawan {
         return $this->sertifikat_kampus_merdeka;
     }
 
-    // 5. Abstract method (hitungTotalHarga dan tampilkanInfoFasilitas) 
-    // sengaja tidak diimplementasikan dulu sesuai instruksi.
+    /**
+     * Implementasi method overriding untuk menghitung gaji bersih Karyawan Magang
+     * 
+     * Rumus: (hari_kerja_masuk * gaji_dasar_per_hari) * 0.80
+     * Property ini diakses dari parent class (Karyawan) yang bertipe protected.
+     * 
+     * @return float
+     */
+    public function hitungGajiBersih(): float {
+        // Menghitung total gaji dasar dan memberikan pengali 80% (0.80) untuk anak magang
+        return (float) (($this->hari_kerja_masuk * $this->gaji_dasar_per_hari) * 0.80);
+    }
 }
