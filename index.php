@@ -11,21 +11,30 @@ $db = $database->connect();
 
 $errorMessage = "";
 
-// 3. GROUPING DATA: Array penampung terpisah berdasarkan tipe
+// GROUPING DATA: Array penampung terpisah berdasarkan tipe
 $listKontrak = [];
 $listTetap = [];
 $listMagang = [];
 
+// Menangkap keyword pencarian
+$searchKeyword = isset($_GET['search']) ? trim($_GET['search']) : '';
+
 if ($db) {
     try {
-        // 1. Ambil data karyawan dari database menggunakan PDO
-        $query = "SELECT * FROM tabel_karyawan ORDER BY id_karyawan ASC";
-        $stmt = $db->prepare($query);
-        $stmt->execute();
+        // Query dinamis berdasarkan pencarian
+        if (!empty($searchKeyword)) {
+            $query = "SELECT * FROM tabel_karyawan WHERE nama_karyawan LIKE :keyword ORDER BY id_karyawan ASC";
+            $stmt = $db->prepare($query);
+            $stmt->bindValue(':keyword', '%' . $searchKeyword . '%', PDO::PARAM_STR);
+        } else {
+            $query = "SELECT * FROM tabel_karyawan ORDER BY id_karyawan ASC";
+            $stmt = $db->prepare($query);
+        }
         
+        $stmt->execute();
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // 2 & 10. Looping data array, mapping object ke subclass (Polymorphism)
+        // Looping data array, mapping object ke subclass (Polymorphism)
         foreach ($results as $row) {
             if ($row['jenis_karyawan'] === 'Kontrak') {
                 $listKontrak[] = new KaryawanKontrak($row);
@@ -46,7 +55,6 @@ if ($db) {
 function renderSlipGajiCard($karyawan, $badgeClass, $jenisText, $detailText) {
     // Memanggil metode polymorphism
     $gajiBersih = number_format($karyawan->hitungGajiBersih(), 0, ',', '.');
-    
     $nama = htmlspecialchars($karyawan->getNamaKaryawan());
     $id = htmlspecialchars($karyawan->getIdKaryawan());
     $dept = htmlspecialchars($karyawan->getDepartemen());
@@ -99,7 +107,6 @@ function renderSlipGajiCard($karyawan, $badgeClass, $jenisText, $detailText) {
         :root {
             --bg-dark: #0f172a;
             --bg-card: #1e293b;
-            --bg-card-hover: #1f2937;
             --border-color: #334155;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
@@ -115,7 +122,7 @@ function renderSlipGajiCard($karyawan, $badgeClass, $jenisText, $detailText) {
             overflow-x: hidden;
         }
 
-        /* 6. SIDEBAR */
+        /* SIDEBAR */
         .sidebar {
             width: 260px;
             background-color: var(--bg-card);
@@ -125,6 +132,7 @@ function renderSlipGajiCard($karyawan, $badgeClass, $jenisText, $detailText) {
             flex-direction: column;
             position: fixed;
             height: 100vh;
+            z-index: 10;
         }
 
         .sidebar-brand {
@@ -170,23 +178,103 @@ function renderSlipGajiCard($karyawan, $badgeClass, $jenisText, $detailText) {
             width: calc(100% - 260px);
         }
 
-        /* 7. HEADER */
-        .header {
+        /* HEADER & SEARCH FORM */
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
             margin-bottom: 40px;
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 20px;
         }
 
-        .header h1 {
+        .header-content h1 {
             font-size: 2.2rem;
             font-weight: 700;
             color: var(--text-main);
             margin-bottom: 6px;
         }
 
-        .header p {
+        .header-content p {
             font-size: 1.05rem;
             color: var(--text-muted);
+        }
+
+        /* FITUR SEARCH UI IMPROVEMENTS */
+        .search-form {
+            display: flex;
+            align-items: center;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 50px;
+            padding: 5px 5px 5px 15px;
+            transition: border-color 0.2s ease;
+            position: relative;
+        }
+
+        .search-form:focus-within {
+            border-color: var(--primary);
+        }
+
+        .search-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            padding: 8px 10px;
+            width: 250px;
+        }
+
+        .search-input::placeholder {
+            color: #64748b;
+        }
+
+        .clear-btn {
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            text-decoration: none;
+        }
+
+        .clear-btn:hover {
+            color: #f87171;
+            background-color: rgba(248, 113, 113, 0.1);
+        }
+
+        .search-btn {
+            background-color: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 50px;
+            padding: 8px 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            margin-left: 5px;
+        }
+
+        .search-btn:hover {
+            background-color: #2563eb;
+        }
+
+        /* Teks Kecil Pencarian */
+        .search-feedback {
+            margin-bottom: 30px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .search-feedback strong {
+            color: var(--text-main);
         }
 
         /* SECTION LAYOUT */
@@ -219,7 +307,7 @@ function renderSlipGajiCard($karyawan, $badgeClass, $jenisText, $detailText) {
             gap: 25px;
         }
 
-        /* 4 & 5. CARD SLIP GAJI */
+        /* CARD SLIP GAJI */
         .slip-card {
             background-color: var(--bg-card);
             border: 1px solid var(--border-color);
@@ -249,9 +337,6 @@ function renderSlipGajiCard($karyawan, $badgeClass, $jenisText, $detailText) {
             color: var(--text-main);
             font-weight: 600;
             margin-bottom: 4px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         .slip-id {
@@ -286,10 +371,9 @@ function renderSlipGajiCard($karyawan, $badgeClass, $jenisText, $detailText) {
             font-weight: 500;
         }
 
-        /* Highlight Salary Area */
         .slip-salary {
             margin-top: 5px;
-            background-color: #0f172a; /* Warna lebih gelap untuk kontras gaji */
+            background-color: #0f172a;
             padding: 16px;
             border-radius: 8px;
             border: 1px solid #1e293b;
@@ -310,7 +394,7 @@ function renderSlipGajiCard($karyawan, $badgeClass, $jenisText, $detailText) {
             font-style: italic;
         }
 
-        /* 9. BADGES */
+        /* BADGES */
         .badge {
             padding: 6px 12px;
             border-radius: 20px;
@@ -320,20 +404,11 @@ function renderSlipGajiCard($karyawan, $badgeClass, $jenisText, $detailText) {
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        .badge-kontrak { background-color: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); } /* Blue */
-        .badge-tetap { background-color: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); } /* Green */
-        .badge-magang { background-color: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3); } /* Orange */
+        .badge-kontrak { background-color: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .badge-tetap { background-color: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-magang { background-color: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3); }
 
-        /* Error / Empty State */
-        .error-message {
-            background-color: rgba(239, 68, 68, 0.1);
-            color: #f87171;
-            padding: 15px 20px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-            border: 1px solid rgba(239, 68, 68, 0.2);
-        }
-
+        /* Empty State */
         .empty-state {
             grid-column: 1 / -1;
             color: var(--text-muted);
@@ -344,11 +419,26 @@ function renderSlipGajiCard($karyawan, $badgeClass, $jenisText, $detailText) {
             border: 1px dashed var(--border-color);
             text-align: center;
         }
+
+        /* Responsiveness */
+        @media (max-width: 992px) {
+            .header-top {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 20px;
+            }
+            .search-form {
+                width: 100%;
+            }
+            .search-input {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <!-- 6. SIDEBAR -->
+    <!-- SIDEBAR -->
     <aside class="sidebar">
         <div class="sidebar-brand">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -365,33 +455,59 @@ function renderSlipGajiCard($karyawan, $badgeClass, $jenisText, $detailText) {
     <!-- MAIN CONTENT -->
     <main class="main-content">
         
-        <!-- 7. HEADER -->
-        <header class="header">
-            <h1>Slip Gaji Karyawan</h1>
-            <p>Sistem OOP PHP Native</p>
+        <!-- HEADER & SEARCH FORM -->
+        <header class="header-top">
+            <div class="header-content">
+                <h1>Slip Gaji Karyawan</h1>
+                <p>Sistem OOP PHP Native</p>
+            </div>
+            
+            <form method="GET" action="index.php" class="search-form">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" name="search" class="search-input" placeholder="Cari nama karyawan..." value="<?php echo htmlspecialchars($searchKeyword); ?>" autocomplete="off">
+                
+                <!-- UX: Tombol Clear Search (Silang) Muncul Jika Ada Keyword -->
+                <?php if (!empty($searchKeyword)): ?>
+                    <a href="index.php" class="clear-btn" title="Reset Pencarian">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </a>
+                <?php endif; ?>
+                
+                <button type="submit" class="search-btn">Cari</button>
+            </form>
         </header>
 
+        <!-- UX: Teks Kecil Feedback Pencarian -->
+        <?php if (!empty($searchKeyword)): ?>
+            <div class="search-feedback">
+                Menampilkan hasil pencarian untuk: <strong>'<?php echo htmlspecialchars($searchKeyword); ?>'</strong>
+            </div>
+        <?php endif; ?>
+
         <?php if (!empty($errorMessage)): ?>
-            <div class="error-message">
+            <div style="background-color: rgba(239,68,68,0.1); color: #f87171; padding: 15px; border-radius: 8px; margin-bottom: 25px; border: 1px solid rgba(239,68,68,0.2);">
                 <?php echo htmlspecialchars($errorMessage); ?>
             </div>
         <?php endif; ?>
 
-        <!-- 3A. SECTION KONTRAK -->
+        <!-- SECTION KONTRAK -->
         <section id="kontrak" class="section-group">
             <h2 class="section-title">Karyawan Kontrak</h2>
             <div class="card-grid">
                 <?php 
                 if (empty($listKontrak)) {
-                    echo "<div class='empty-state'>Tidak ada data karyawan kontrak.</div>";
+                    // UX: Empty State jika Karyawan Tidak Ditemukan
+                    echo "<div class='empty-state'>Karyawan tidak ditemukan</div>";
                 } else {
                     foreach ($listKontrak as $karyawan) {
-                        // Render UI untuk Karyawan Kontrak
                         renderSlipGajiCard(
                             $karyawan, 
                             "badge-kontrak", 
                             "Kontrak", 
-                            "Gaji Dasar * Hari Kerja" // Optional Note
+                            "Gaji Dasar * Hari Kerja"
                         );
                     }
                 }
@@ -399,16 +515,16 @@ function renderSlipGajiCard($karyawan, $badgeClass, $jenisText, $detailText) {
             </div>
         </section>
 
-        <!-- 3B. SECTION TETAP -->
+        <!-- SECTION TETAP -->
         <section id="tetap" class="section-group">
             <h2 class="section-title" style="--primary: #10b981;">Karyawan Tetap</h2>
             <div class="card-grid">
                 <?php 
                 if (empty($listTetap)) {
-                    echo "<div class='empty-state'>Tidak ada data karyawan tetap.</div>";
+                    // UX: Empty State jika Karyawan Tidak Ditemukan
+                    echo "<div class='empty-state'>Karyawan tidak ditemukan</div>";
                 } else {
                     foreach ($listTetap as $karyawan) {
-                        // Render UI untuk Karyawan Tetap
                         renderSlipGajiCard(
                             $karyawan, 
                             "badge-tetap", 
@@ -421,16 +537,16 @@ function renderSlipGajiCard($karyawan, $badgeClass, $jenisText, $detailText) {
             </div>
         </section>
 
-        <!-- 3C. SECTION MAGANG -->
+        <!-- SECTION MAGANG -->
         <section id="magang" class="section-group">
             <h2 class="section-title" style="--primary: #f97316;">Karyawan Magang</h2>
             <div class="card-grid">
                 <?php 
                 if (empty($listMagang)) {
-                    echo "<div class='empty-state'>Tidak ada data karyawan magang.</div>";
+                    // UX: Empty State jika Karyawan Tidak Ditemukan
+                    echo "<div class='empty-state'>Karyawan tidak ditemukan</div>";
                 } else {
                     foreach ($listMagang as $karyawan) {
-                        // Render UI untuk Karyawan Magang
                         renderSlipGajiCard(
                             $karyawan, 
                             "badge-magang", 
