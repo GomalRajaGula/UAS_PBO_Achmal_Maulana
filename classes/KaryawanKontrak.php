@@ -6,33 +6,32 @@ require_once 'Karyawan.php';
 /**
  * Class KaryawanKontrak
  * 
- * Karena class ini belum mengimplementasikan abstract method dari parent class
- * (hitungTotalHarga dan tampilkanInfoFasilitas), maka secara konsep OOP PHP 
- * class ini juga harus dideklarasikan sebagai abstract class agar tidak error.
+ * Class turunan dari Karyawan untuk tipe kontrak.
+ * Class ini tidak lagi bersifat abstract karena sudah mengimplementasikan 
+ * seluruh method abstrak dari parent.
  */
-abstract class KaryawanKontrak extends Karyawan {
+class KaryawanKontrak extends Karyawan {
     
-    // 1. Property protected sesuai spesifikasi
+    // Property protected sesuai spesifikasi
     protected int $durasi_kontrak_bulan;
     protected string $agensi_penyalur;
 
     /**
-     * 2. Constructor menerima data array dari database
+     * Constructor menerima data array dari database
      * 
-     * @param array $data Data record dari database (assosiative array)
+     * @param array $data Data record dari database (associative array)
      */
     public function __construct(array $data) {
         // Memanggil constructor dari parent class (Karyawan)
         parent::__construct($data);
 
-        // 3. Mapping data spesifik untuk KaryawanKontrak
-        // Menggunakan null coalescing operator (??) untuk fallback nilai default jika key tidak ada
-        $this->durasi_kontrak_bulan = $data['durasi_kontrak_bulan'] ?? 0;
+        // Mapping data spesifik untuk KaryawanKontrak
+        $this->durasi_kontrak_bulan = isset($data['durasi_kontrak_bulan']) ? (int) $data['durasi_kontrak_bulan'] : 0;
         $this->agensi_penyalur = $data['agensi_penyalur'] ?? 'Tidak diketahui';
     }
 
     /**
-     * 4. Getter untuk property durasi_kontrak_bulan
+     * Getter untuk property durasi_kontrak_bulan
      * 
      * @return int
      */
@@ -41,7 +40,7 @@ abstract class KaryawanKontrak extends Karyawan {
     }
 
     /**
-     * 4. Getter untuk property agensi_penyalur
+     * Getter untuk property agensi_penyalur
      * 
      * @return string
      */
@@ -49,6 +48,16 @@ abstract class KaryawanKontrak extends Karyawan {
         return $this->agensi_penyalur;
     }
 
-    // 5. Abstract method hitungTotalHarga() dan tampilkanInfoFasilitas() 
-    // sengaja tidak diimplementasikan dulu sesuai instruksi.
+    /**
+     * Implementasi method overriding untuk menghitung gaji bersih Karyawan Kontrak
+     * 
+     * Rumus: hari_kerja_masuk * gaji_dasar_per_hari
+     * Property ini diakses dari parent class (Karyawan) yang bertipe protected.
+     * 
+     * @return float
+     */
+    public function hitungGajiBersih(): float {
+        // Menghitung total gaji dan memastikannya bertipe float
+        return (float) ($this->hari_kerja_masuk * $this->gaji_dasar_per_hari);
+    }
 }

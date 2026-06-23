@@ -1,121 +1,81 @@
 <?php
 
-class Karyawan {
-    private $conn;
-    private $table_name = "karyawan";
+/**
+ * Abstract Class Karyawan
+ * 
+ * Base class untuk seluruh entitas Karyawan.
+ */
+abstract class Karyawan {
+    
+    // 1. Property protected dipertahankan
+    protected int $id_karyawan;
+    protected string $nama_karyawan;
+    protected string $departemen;
+    protected int $hari_kerja_masuk;
+    protected float $gaji_dasar_per_hari;
 
-    // Properties
-    public $id;
-    public $nip;
-    public $nama;
-    public $jabatan;
-    public $email;
-    public $no_telp;
-
-    // Constructor with DB connection
-    public function __construct($db) {
-        $this->conn = $db;
+    /**
+     * 2. Constructor menerima data array dari database
+     * 
+     * @param array $data Data array associative dari database
+     */
+    public function __construct(array $data) {
+        // Mapping data dengan aman menggunakan casting dan null coalescing
+        $this->id_karyawan = isset($data['id_karyawan']) ? (int) $data['id_karyawan'] : 0;
+        $this->nama_karyawan = $data['nama_karyawan'] ?? 'Tanpa Nama';
+        $this->departemen = $data['departemen'] ?? 'Tidak ada';
+        $this->hari_kerja_masuk = isset($data['hari_kerja_masuk']) ? (int) $data['hari_kerja_masuk'] : 0;
+        $this->gaji_dasar_per_hari = isset($data['gaji_dasar_per_hari']) ? (float) $data['gaji_dasar_per_hari'] : 0.0;
     }
 
-    // Read all karyawan
-    public function read() {
-        $query = "SELECT * FROM " . $this->table_name . " ORDER BY id DESC";
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute();
-        return $stmt;
+    /**
+     * Getter id_karyawan
+     * @return int
+     */
+    public function getIdKaryawan(): int {
+        return $this->id_karyawan;
     }
 
-    // Create Karyawan record
-    public function create() {
-        $query = "INSERT INTO " . $this->table_name . " 
-                  SET nip=:nip, nama=:nama, jabatan=:jabatan, email=:email, no_telp=:no_telp";
-        
-        $stmt = $this->conn->prepare($query);
-
-        // Sanitize inputs
-        $this->nip = htmlspecialchars(strip_tags($this->nip));
-        $this->nama = htmlspecialchars(strip_tags($this->nama));
-        $this->jabatan = htmlspecialchars(strip_tags($this->jabatan));
-        $this->email = htmlspecialchars(strip_tags($this->email));
-        $this->no_telp = htmlspecialchars(strip_tags($this->no_telp));
-
-        // Bind parameters
-        $stmt->bindParam(":nip", $this->nip);
-        $stmt->bindParam(":nama", $this->nama);
-        $stmt->bindParam(":jabatan", $this->jabatan);
-        $stmt->bindParam(":email", $this->email);
-        $stmt->bindParam(":no_telp", $this->no_telp);
-
-        if ($stmt->execute()) {
-            return true;
-        }
-        return false;
+    /**
+     * Getter nama_karyawan
+     * @return string
+     */
+    public function getNamaKaryawan(): string {
+        return $this->nama_karyawan;
     }
 
-    // Update Karyawan record
-    public function update() {
-        $query = "UPDATE " . $this->table_name . " 
-                  SET nip=:nip, nama=:nama, jabatan=:jabatan, email=:email, no_telp=:no_telp 
-                  WHERE id=:id";
-        
-        $stmt = $this->conn->prepare($query);
-
-        // Sanitize inputs
-        $this->id = htmlspecialchars(strip_tags($this->id));
-        $this->nip = htmlspecialchars(strip_tags($this->nip));
-        $this->nama = htmlspecialchars(strip_tags($this->nama));
-        $this->jabatan = htmlspecialchars(strip_tags($this->jabatan));
-        $this->email = htmlspecialchars(strip_tags($this->email));
-        $this->no_telp = htmlspecialchars(strip_tags($this->no_telp));
-
-        // Bind parameters
-        $stmt->bindParam(":id", $this->id);
-        $stmt->bindParam(":nip", $this->nip);
-        $stmt->bindParam(":nama", $this->nama);
-        $stmt->bindParam(":jabatan", $this->jabatan);
-        $stmt->bindParam(":email", $this->email);
-        $stmt->bindParam(":no_telp", $this->no_telp);
-
-        if ($stmt->execute()) {
-            return true;
-        }
-        return false;
+    /**
+     * Getter departemen
+     * @return string
+     */
+    public function getDepartemen(): string {
+        return $this->departemen;
     }
 
-    // Delete Karyawan record
-    public function delete() {
-        $query = "DELETE FROM " . $this->table_name . " WHERE id=:id";
-        $stmt = $this->conn->prepare($query);
-
-        // Sanitize input
-        $this->id = htmlspecialchars(strip_tags($this->id));
-
-        // Bind parameter
-        $stmt->bindParam(":id", $this->id);
-
-        if ($stmt->execute()) {
-            return true;
-        }
-        return false;
+    /**
+     * Getter hari_kerja_masuk
+     * @return int
+     */
+    public function getHariKerjaMasuk(): int {
+        return $this->hari_kerja_masuk;
     }
 
-    // Get single Karyawan by ID
-    public function readOne() {
-        $query = "SELECT * FROM " . $this->table_name . " WHERE id = ? LIMIT 0,1";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(1, $this->id);
-        $stmt->execute();
-
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($row) {
-            $this->nip = $row['nip'];
-            $this->nama = $row['nama'];
-            $this->jabatan = $row['jabatan'];
-            $this->email = $row['email'];
-            $this->no_telp = $row['no_telp'];
-            return true;
-        }
-        return false;
+    /**
+     * Getter gaji_dasar_per_hari
+     * @return float
+     */
+    public function getGajiDasarPerHari(): float {
+        return $this->gaji_dasar_per_hari;
     }
+
+    // 3. Abstract method lama telah dihapus
+
+    /**
+     * 4. Abstract method baru untuk menghitung gaji bersih
+     * 
+     * Harus diimplementasikan oleh class turunannya.
+     * 
+     * @return float
+     */
+    abstract public function hitungGajiBersih(): float;
 }
